@@ -1,30 +1,30 @@
 import React from "react";
 import { Button } from "semantic-ui-react";
-function TriviaCard({ trivia, round, setRound, setScore }) {
-	const question = atob(trivia[round].question);
-	const incorrect_answers = trivia[round].incorrect_answers.map((ia) =>
-		atob(ia)
-	);
-	const correct_answer = atob(trivia[round].correct_answer);
-	const choices = shuffleArray([...incorrect_answers, correct_answer]);
+function TriviaCard({ trivia, round, setRound, setScore, score }) {
+	// const question = atob(trivia[round].question);
+	// const incorrect_answers = trivia[round].incorrect_answers.map((ia) =>
+	// 	atob(ia)
+	// );
+	// const correct_answer = atob(trivia[round].correct_answer);
+	// const choices = shuffleArray([...incorrect_answers, correct_answer]);
 	return (
 		<div>
-			<h1>{question}</h1>
+			{/* <h1>{question}</h1> */}
 			<div>
-				{choices.map((choice, idx) => (
+				{/* {choices.map((choice, idx) => (
 					<Button
 						key={idx}
 						value={choice}
 						onClick={(e) => {
-							e.target.value === correct_answer
-								? setScore((prev) => prev + 1)
-								: setScore((prev) => prev - 1);
+							if (e.target.value === correct_answer) {
+								setScore((prev) => prev + 1);
+							}
 							setRound((prev) => prev + 1);
 						}}
 					>
 						{choice}
 					</Button>
-				))}
+				))} */}
 			</div>
 		</div>
 	);

@@ -11,3 +11,9 @@ export const getCategory = async () => {
 	const data = await getData.json();
 	return data.trivia_categories;
 };
+export const pages = {
+	home: "",
+	quiz: "quiz",
+	dashboard: "dashboard",
+	leaderboard: "leaderboard",
+};
