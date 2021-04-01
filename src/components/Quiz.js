@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getTrivia, getCategory, pages } from "../API";
-import TriviaCard from "./TriviaCard";
 import QuizCard from "./QuizCard";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 
@@ -25,11 +24,10 @@ const DIFFICULTY = {
 	3: "hard",
 };
 
-function Quiz() {
+function Quiz({ user }) {
 	// for fetching category list
 	const [cat, setCat] = useState([]);
 	//
-	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [difficulty, setDifficulty] = useState("");
 	const [category, setCategory] = useState(0);
@@ -37,6 +35,8 @@ function Quiz() {
 	const [round, setRound] = useState(0);
 	const [score, setScore] = useState(0);
 	const [time, setTime] = useState(0);
+	const [over, setOver] = useState(false);
+
 	const loadTrivia = async (category, difficulty) => {
 		const trivia = await getTrivia(category, difficulty);
 		return trivia;
@@ -63,10 +63,15 @@ function Quiz() {
 		const { value } = result || event.target;
 		setCategory(value);
 	};
+	const timerRef = useRef(null);
 	const startQuiz = () => {
 		if (category == 0) {
 			alert("please select a category");
 		} else {
+			timerRef.current = setInterval(() => {
+				setTime((prev) => (prev += 1));
+			}, 1000);
+			if (difficulty == "") setDifficulty("easy");
 			setLoading(true);
 			loadTrivia(category, difficulty)
 				.then((res) => {
@@ -76,6 +81,10 @@ function Quiz() {
 				.catch((err) => console.error(err));
 		}
 	};
+
+	if (over) {
+		clearTimeout(timerRef.current);
+	}
 	return (
 		<>
 			{cat.length > 0 && !loading ? (
@@ -90,56 +99,46 @@ function Quiz() {
 					</Link>
 					<Container>
 						<Divider hidden />
-						{trivia.length > 0 && round <= MAXROUND ? (
+						{trivia.length > 0 && !over ? (
 							<QuizCard
 								MAXROUND={MAXROUND}
 								trivia={trivia}
 								round={round}
 								score={score}
 								time={time}
+								user={user}
+								difficulty={difficulty}
 								setRound={setRound}
 								setScore={setScore}
-								setTime={setTime}
+								setOver={setOver}
+								setLoading={setLoading}
 							/>
 						) : (
-							<>
-								{score ? (
-									<Header as="h1" color="yellow">
-										{score}
-									</Header>
-								) : (
-									""
-								)}
-								<QuizConfig
-									catOnChange={catOnChange}
-									category={category}
-									cat={cat}
-									handleRate={handleRate}
-									startQuiz={startQuiz}
-								/>
-							</>
+							<QuizConfig
+								catOnChange={catOnChange}
+								category={category}
+								cat={cat}
+								handleRate={handleRate}
+								startQuiz={startQuiz}
+							/>
 						)}
-						<Modal
-							basic
-							onClose={() => setOpen(false)}
-							onOpen={() => setOpen(true)}
-							open={round == MAXROUND}
-							size="small"
-							trigger={<Button>Basic Modal</Button>}
-						>
-							<Header icon>
+						<Modal basic open={over} size="small">
+							<Header icon as="h1">
 								<Icon name="heart" color="red" />
 								Congrats!
 							</Header>
 							<Modal.Content>
-								<Header as="h1" style={{ color: "white", textAlign: "center" }}>
-									You scored {score} in {time}
+								<Header as="h3" style={{ color: "white", textAlign: "center" }}>
+									You got {score} correct answers in {parseInt(time / 60)}:
+									{time % 60}
 								</Header>
 							</Modal.Content>
 							<Modal.Actions>
-								<Button color="green" inverted onClick={() => setOpen(false)}>
-									<Icon name="home" /> home
-								</Button>
+								<Link to="/">
+									<Button color="green" inverted>
+										<Icon name="home" /> home
+									</Button>
+								</Link>
 							</Modal.Actions>
 						</Modal>
 					</Container>
