@@ -9,18 +9,20 @@ function QuizCard({
 	score,
 	time,
 	user,
+	quizData,
 	difficulty,
 	setRound,
 	setScore,
 	setOver,
 	setLoading,
+	setQuizData,
 }) {
 	const triviaRound = trivia[round];
 	const question = atob(triviaRound.question);
 	const correct_answer = atob(triviaRound.correct_answer);
 	const incorrect_answers = triviaRound.incorrect_answers.map((ia) => atob(ia));
+	// const choices = [...incorrect_answers, correct_answer];
 	const [choices, setChoices] = useState([]);
-	const [quizData, setQuizData] = useState([]);
 	useEffect(() => {
 		setChoices(shuffleArray([...incorrect_answers, correct_answer]));
 	}, [question]);
@@ -58,34 +60,7 @@ function QuizCard({
 							setScore((prev) => prev + 1);
 						}
 						if (round == MAXROUND) {
-							//  this is fucking delay, move this up to its parent component
-							if (user) {
-								setLoading(true);
-								const ref = firestore.collection(user.uid);
-								ref
-									.add({
-										quizData: [
-											...quizData,
-											{ question, user_answer: e.target.value, correct_answer },
-										],
-										score,
-										time,
-										difficulty,
-										createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-									})
-									.then((docRef) => {
-										setOver(true);
-										setLoading(false);
-										// console.log("Document written with ID: ", docRef.id);
-									})
-									.catch((error) => {
-										setOver(true);
-										setLoading(false);
-										console.error("Error adding document: ", error);
-									});
-							} else {
-								setOver(true);
-							}
+							setOver(true);
 						} else {
 							setRound((prev) => prev + 1);
 						}
@@ -97,28 +72,6 @@ function QuizCard({
 		</Segment>
 	);
 }
-const saveUserData = (quizData, score, time, difficulty, user) => {
-	const userData = {
-		quizData,
-		score,
-		time,
-		difficulty,
-	};
-	const ref = firestore.collection(user.uid);
-	ref
-		.add({
-			userData,
-			createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-		})
-		.then((docRef) => {
-			return true;
-			// console.log("Document written with ID: ", docRef.id);
-		})
-		.catch((error) => {
-			console.error("Error adding document: ", error);
-		});
-	return true;
-};
 const shuffleArray = (array) => {
 	for (var i = array.length - 1; i > 0; i--) {
 		var j = Math.floor(Math.random() * (i + 1));

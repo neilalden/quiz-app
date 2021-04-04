@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getTrivia, getCategory, pages } from "../API";
-import QuizCard from "./QuizCard";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-
+import firebase, { firestore } from "../firebase";
 import {
 	Header,
 	Segment,
@@ -16,6 +15,7 @@ import {
 	Icon,
 	Modal,
 } from "semantic-ui-react";
+import QuizCard from "./QuizCard";
 
 const MAXROUND = 9;
 const DIFFICULTY = {
@@ -36,24 +36,20 @@ function Quiz({ user }) {
 	const [score, setScore] = useState(0);
 	const [time, setTime] = useState(0);
 	const [over, setOver] = useState(false);
+	const [quizData, setQuizData] = useState([]);
 
 	const loadTrivia = async (category, difficulty) => {
 		const trivia = await getTrivia(category, difficulty);
 		return trivia;
 	};
+
 	const loadCategory = async () => {
 		const category = await getCategory();
 		return category.map((c) => {
 			return { key: c.id, text: c.name, value: c.id };
 		});
 	};
-	useEffect(() => {
-		loadCategory()
-			.then((res) => {
-				setCat(res);
-			})
-			.catch((e) => console.log(e));
-	}, [category]);
+
 	const handleRate = (e, data) => {
 		const rating = data.rating;
 		setDifficulty(DIFFICULTY[rating]);
@@ -63,7 +59,9 @@ function Quiz({ user }) {
 		const { value } = result || event.target;
 		setCategory(value);
 	};
+
 	const timerRef = useRef(null);
+
 	const startQuiz = () => {
 		if (category == 0) {
 			alert("please select a category");
@@ -82,9 +80,39 @@ function Quiz({ user }) {
 		}
 	};
 
-	if (over) {
-		clearTimeout(timerRef.current);
-	}
+	useEffect(() => {
+		loadCategory()
+			.then((res) => {
+				setCat(res);
+			})
+			.catch((e) => console.log(e));
+		if (over) {
+			clearTimeout(timerRef.current);
+			if (user) {
+				const ref = firestore.collection(user.uid);
+				ref
+					.add({
+						quizData,
+						score,
+						time,
+						difficulty,
+						createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+					})
+					.then((docRef) => {
+						setOver(true);
+						setLoading(false);
+
+						// console.log("Document written with ID: ", docRef.id);
+					})
+					.catch((error) => {
+						setOver(true);
+						setLoading(false);
+						console.error("Error adding document: ", error);
+					});
+			}
+		}
+	}, [category, over]);
+
 	return (
 		<>
 			{cat.length > 0 && !loading ? (
@@ -107,10 +135,12 @@ function Quiz({ user }) {
 								score={score}
 								time={time}
 								user={user}
+								quizData={quizData}
 								difficulty={difficulty}
 								setRound={setRound}
 								setScore={setScore}
 								setOver={setOver}
+								setQuizData={setQuizData}
 								setLoading={setLoading}
 							/>
 						) : (
