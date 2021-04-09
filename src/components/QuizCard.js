@@ -11,6 +11,7 @@ function QuizCard({
 	user,
 	quizData,
 	difficulty,
+	isRanked,
 	setRound,
 	setScore,
 	setOver,
@@ -21,15 +22,17 @@ function QuizCard({
 	const question = atob(triviaRound.question);
 	const correct_answer = atob(triviaRound.correct_answer);
 	const incorrect_answers = triviaRound.incorrect_answers.map((ia) => atob(ia));
-	// const choices = [...incorrect_answers, correct_answer];
-	const [choices, setChoices] = useState([]);
-	useEffect(() => {
-		setChoices(shuffleArray([...incorrect_answers, correct_answer]));
-	}, [question]);
+	const choices = [...incorrect_answers, correct_answer];
+	// const [choices, setChoices] = useState([]);
+	// useEffect(() => {
+	// 	setChoices(shuffleArray([...incorrect_answers, correct_answer]));
+	// }, [question]);
 	return (
 		<Segment inverted>
 			<Segment inverted>
 				<Header as="h3" style={{ float: "right", textAlign: "start" }}>
+					{isRanked ? <span style={{ color: "red" }}>RANKED</span> : ""}
+					<br />
 					difficulty : {difficulty}
 					<br />
 					round : {round + 1}/10

@@ -25,7 +25,7 @@ function App() {
 						<Leaderboard />
 					</Route>
 					<Route path="/dashboard">
-						<Dashboard user={user} />
+						<Dashboard />
 					</Route>
 				</Switch>
 			</Segment>

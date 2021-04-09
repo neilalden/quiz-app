@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { getTrivia, getCategory, pages } from "../API";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 import firebase, { firestore } from "../firebase";
+import { useDocument, useCollectionData } from "react-firebase-hooks/firestore";
 import {
 	Header,
 	Segment,
@@ -37,6 +38,7 @@ function Quiz({ user }) {
 	const [time, setTime] = useState(0);
 	const [over, setOver] = useState(false);
 	const [quizData, setQuizData] = useState([]);
+	const [isRanked, setIsRanked] = useState(false);
 
 	const loadTrivia = async (category, difficulty) => {
 		const trivia = await getTrivia(category, difficulty);
@@ -75,11 +77,25 @@ function Quiz({ user }) {
 				.then((res) => {
 					setTrivia(res);
 					setLoading(false);
+					if (user && difficulty == DIFFICULTY[3]) {
+						setIsRanked(true);
+					}
 				})
 				.catch((err) => console.error(err));
 		}
 	};
-
+	const mmrRef = firestore.collection(user ? user.uid : "none").doc("myMMR");
+	const [value] = useDocument(mmrRef);
+	// const topRef = firestore.collection("top");
+	// const [topData] = useCollectionData(topRef);
+	// if (topData) {
+	// 	const topPlayers = topData.map((td) => td.name);
+	// 	console.log(topPlayers);
+	// 	if (topData.some((element) => element.mmr == element.mmr)) {
+	// 		console.log("hey");
+	// 	}
+	// 	console.log(topData);
+	// }
 	useEffect(() => {
 		loadCategory()
 			.then((res) => {
@@ -99,10 +115,24 @@ function Quiz({ user }) {
 						createdAt: firebase.firestore.FieldValue.serverTimestamp(),
 					})
 					.then((docRef) => {
-						setOver(true);
-						setLoading(false);
-
-						// console.log("Document written with ID: ", docRef.id);
+						if (isRanked) {
+							if (value) {
+								const currentMMR = value.data().mmr;
+								const gainedMMR = score * 100 - time;
+								const newMMR = currentMMR + gainedMMR;
+								mmrRef.update({ mmr: newMMR }).then(() => {
+									// if (topData.some((element) => newMMR > element.mmr)) {
+									// 	console.log(topData);
+									// }
+								});
+							} else {
+								setOver(true);
+								setLoading(false);
+							}
+						} else {
+							setOver(true);
+							setLoading(false);
+						}
 					})
 					.catch((error) => {
 						setOver(true);
@@ -137,6 +167,7 @@ function Quiz({ user }) {
 								user={user}
 								quizData={quizData}
 								difficulty={difficulty}
+								isRanked={isRanked}
 								setRound={setRound}
 								setScore={setScore}
 								setOver={setOver}
